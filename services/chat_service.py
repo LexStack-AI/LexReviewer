@@ -1,3 +1,5 @@
+"""Service for persisting, reading, and editing chat histories."""
+
 from datetime import datetime, timezone
 from http.client import HTTPException
 
@@ -6,21 +8,27 @@ from langchain_classic.schema import AIMessage, HumanMessage
 from models import ChatEntry
 from storage.provider import Storage
 
+
 class ChatService:
+    """High-level wrapper around storage for chat history operations."""
+
     def __init__(self):
         self.storage = Storage()
 
     async def save_chat_message(self, document_id: str, user_id: str, chat_entry: ChatEntry):
+        """Append a single user/assistant turn to the chat history."""
         try:
             question = chat_entry.question
             answer = chat_entry.answer
             reference_positions = chat_entry.reference_positions
             thoughts = chat_entry.thoughts
 
+            # We key history by (user, document) to support multiple users per doc.
             unique_id = f"{user_id}_{document_id}"
             chat_history = self.storage.get_chat_history(unique_id)
             
             current_time = datetime.now(timezone.utc).isoformat()
+            # Persist the user message with an ISO timestamp for later edits.
             chat_history.add_message(
                 HumanMessage(
                     content=question,
@@ -32,6 +40,7 @@ class ChatService:
                 )
             )
 
+            # Persist the assistant message, including references and thoughts.
             chat_history.add_message(
                 AIMessage(
                     content=answer,
@@ -49,11 +58,12 @@ class ChatService:
             raise HTTPException(status_code=500, detail=f"Error saving chat in chat history: {str(e)}")
      
     async def clear_chat_history(self, document_id, user_id):
+        """Delete all stored messages for a given (user, document) pair."""
         try:
             unique_id = f"{user_id}_{document_id}"
             chat_history = self.storage.get_chat_history(unique_id)
             
-            # Clear chat history
+            # Clear chat history in the underlying Mongo-backed store.
             await chat_history.aclear()
             return {"message": f"Chat history for document {document_id} and user {user_id} cleared successfully."}
 
@@ -61,8 +71,9 @@ class ChatService:
             raise HTTPException(status_code=500, detail=f"Error clearing chat history: {str(e)}")
         
     async def get_history(self, document_id: str, user_id: str):
+        """Return chat history in the flattened format expected by the UI."""
         try:
-            # Directly access MongoDB chat history
+            # Directly access MongoDB chat history and flatten into QA pairs.
             unique_id = f"{user_id}_{document_id}"
             chat_history = self.storage.get_chat_history(unique_id)
 
@@ -89,6 +100,7 @@ class ChatService:
             raise HTTPException(status_code=500, detail=f"Error fetching chat history: {str(e)}")
 
     async def revert_history(self, document_id: str, user_id: str, message_index: int):
+        """Truncate chat history so that a previous user question can be edited."""
         try:
             unique_id = f"{user_id}_{document_id}"
             chat_history = self.storage.get_chat_history(unique_id)
@@ -97,7 +109,8 @@ class ChatService:
             if len(messages) < 2 or message_index * 2 >= len(messages):
                 raise HTTPException(status_code=404, detail="Message not found")
             
-            # Calculate the actual index in the raw messages list (each QA pair is 2 messages)
+            # Each QA pair is 2 messages in the raw list (Human, then AI).
+            # Convert the logical message_index into an index into that list.
             actual_index = (message_index * 2)
             if not isinstance(messages[actual_index], HumanMessage):
                 raise HTTPException(status_code=400, detail="Selected message is not a user message")

@@ -1,3 +1,5 @@
+"""High-level orchestration layer that wires LangGraph nodes into a RAG agent."""
+
 import json
 from typing import AsyncGenerator
 
@@ -16,7 +18,10 @@ from observation.provider import ObservationProvider
 from services.ChatHistorySummarizer import ChatHistorySummarizer
 from storage.provider import Storage
 
+
 class DocumentReviewer:
+    """Entry point used by the FastAPI controller to run the document analysis agent."""
+
     def __init__(self):
         self.chat_history_summarizer = ChatHistorySummarizer()
         self.storage_client = Storage()

@@ -1,10 +1,15 @@
+"""Sentry initialization helper for FastAPI + background tasks."""
+
 import os
 
 from dotenv import load_dotenv
 import sentry_sdk
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
+
 class SentryObservation:
+    """Configure Sentry once on startup if a DSN is provided."""
+
     def __init__(self) -> None:
         load_dotenv()
         sentry_dsn = os.getenv("SENTRY_DSN")

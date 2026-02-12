@@ -1,3 +1,5 @@
+"""Abstraction layer over concrete LLM providers (currently OpenAI)."""
+
 from typing import Any, Callable
 
 from langchain_core.messages import AIMessage
@@ -5,7 +7,10 @@ from pydantic import BaseModel
 
 from llm_provider.OpenAI.openai import OpenAIProvider
 
+
 class LlmProvider:
+    """Convenience wrapper that exposes a stable interface for agent code."""
+
     def __init__(self):
         self.llm_provider = OpenAIProvider()
         

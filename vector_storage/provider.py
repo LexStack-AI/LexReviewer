@@ -1,10 +1,15 @@
+"""Abstraction over the concrete vector database (Qdrant)."""
+
 from typing import Any, Dict, List
 
 from langchain_core.documents import Document
 
 from vector_storage.Qdrant.qdrant import QdrantDatabaseProvider
 
+
 class VectorStorageProvider:
+    """Expose a stable interface that services can use regardless of backend."""
+
     def __init__(self):
         self.provider = QdrantDatabaseProvider()
 

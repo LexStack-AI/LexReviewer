@@ -1,3 +1,5 @@
+"""Qdrant-backed implementation for vector search and reference position lookup."""
+
 import logging
 import os
 import traceback
@@ -22,7 +24,11 @@ from llm_provider.provider import LlmProvider
 from storage.provider import Storage
 
 logger = logging.getLogger(__name__)
+
+
 class QdrantDatabaseProvider:
+    """Owns the Qdrant collection and bridges it to LangChain retrievers."""
+
     def __init__(self):
         load_dotenv()
         qdrant_url = os.getenv("QDRANT_URL")
@@ -41,6 +47,7 @@ class QdrantDatabaseProvider:
         self.qdrant_collection_name = os.getenv("QDRANT_COLLECTION_NAME", "documents")
         self.qdrant_vector_size = int(os.getenv("QDRANT_VECTOR_SIZE", "3072"))
         
+        # Lazily create the collection if it does not exist yet.
         if not self.qdrant_client.collection_exists(self.qdrant_collection_name):
             self.create_parent_collection()
 
@@ -56,7 +63,7 @@ class QdrantDatabaseProvider:
         self.doc_store = self.storage_client.get_doc_store()
 
     def create_parent_collection(self):
-        # Create parent collection in Qdrant
+        # Create parent collection in Qdrant with vector + payload index.
         try:
             self.qdrant_client.create_collection(
                 collection_name=self.qdrant_collection_name, 

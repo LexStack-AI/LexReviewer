@@ -1,3 +1,5 @@
+"""Core LangGraph node that powers the document QA agent with tool calling."""
+
 import json
 import os
 from typing import Any, Dict, List, Tuple
@@ -18,20 +20,23 @@ from llm_provider.provider import LlmProvider
 from models import AgentState, ToolName
 from services.EmbeddingIndexer import EmbeddingIndexer
 
+
 class AgentNode:
     """Single LangGraph node that orchestrates tool-using reasoning over documents."""
 
     def __init__(self): 
         load_dotenv()
 
+        # Shared dependencies that tools and the agent will use.
         self.embedding_indexer = EmbeddingIndexer()
         self.tool_config = ToolConfig()
         self.llm_provider = LlmProvider()
 
+        # Toggle to enable/disable model-native reasoning traces without code changes.
         self.agent_reasoning_allowed= bool(os.getenv("AGENT_REASONING_ALLOWED", True))
         self.llm = self.llm_provider.get_agent_model(self.agent_reasoning_allowed)
         
-        # Centralized tool executor (shared dependencies)
+        # Centralized tool executor (re-used across all tool invocations).
         self.tool_executor = ToolExecutor(
             embedding_indexer=self.embedding_indexer,
         )
@@ -45,6 +50,7 @@ class AgentNode:
         tool_schemas = self._build_tool_schemas(state.get("required_tools", []))
         llm_with_tools = self.llm.bind_tools(tool_schemas)
 
+        # Main agent loop: alternate between LLM calls and tool executions.
         while True:
             response = await self._process_llm_stream(
                 llm_with_tools, messages, writer
@@ -65,7 +71,7 @@ class AgentNode:
     async def _process_llm_stream(
         self, llm_with_tools, messages: List[BaseMessage], writer
     ) -> AIMessage | None:
-        """Process LLM stream events and extract reasoning and text content."""
+        """Process streaming events from the LLM and extract reasoning + text."""
         streamed_text_parts: List[str] = []
         response: AIMessage | None = None
         done_sent = False
@@ -73,6 +79,7 @@ class AgentNode:
         async for event in llm_with_tools.astream_events(messages):
             if event.get("event") == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
+                # Forward any model-native reasoning content as "thought" events.
                 if self.agent_reasoning_allowed:
                     self.llm_provider.process_reasoning_from_event_data(chunk, writer)
                 text_piece = self.llm_provider.extract_text_from_chunk(chunk)
@@ -80,7 +87,7 @@ class AgentNode:
                 if text_piece:
                     streamed_text_parts.append(text_piece)
                     if not done_sent:
-                        # Signal end of reasoning phase; begin streaming response text
+                        # Signal end of reasoning phase; begin streaming response text.
                         writer(json.dumps({"thought": "Done"}) + "\n")
                         done_sent = True
                     writer(json.dumps({"chunk": text_piece}) + "\n")

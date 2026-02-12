@@ -1,18 +1,24 @@
+"""Streamlit chat interface for asking questions over the indexed document."""
+
 import streamlit as st
 from .api import stream_answer
 
+
 def render_chat(document_id):
+    """Render the full chat experience including history and streaming replies."""
 
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
 
     # ⭐ BLOCK CHAT IF NOT INDEXED
+    # We explicitly prevent chatting until the backend has indexed a document
+    # to avoid confusing "no context" responses and wasted API calls.
     if not st.session_state.get("document_indexed", False):
         st.info("📄 Upload and index a document to start chatting.")
         st.chat_input("Ask something about the document", disabled=True)
         return
 
-    # show history
+    # Render previous conversation so the user sees full context.
     for msg in st.session_state.chat_messages:
         with st.chat_message("user"):
             st.markdown(msg["question"])
@@ -24,6 +30,7 @@ def render_chat(document_id):
 
             st.markdown(msg["answer"])
 
+    # New question input from the user.
     question = st.chat_input("Ask something about the document")
 
     if not question:
@@ -32,6 +39,7 @@ def render_chat(document_id):
     with st.chat_message("user"):
         st.markdown(question)
 
+    # Stream model answer and reasoning tokens into the UI.
     with st.chat_message("assistant"):
         thoughts_expander = st.expander("🧠 Agent Thinking", expanded=False)
         with thoughts_expander:
@@ -55,6 +63,7 @@ def render_chat(document_id):
             answer_box.markdown(text or "Thinking...")
             thoughts_placeholder.markdown(final_thoughts)
 
+    # Persist the full turn so it shows up on the next render.
     st.session_state.chat_messages.append({
         "question": question,
         "answer": final_answer,

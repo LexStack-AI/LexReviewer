@@ -1,3 +1,5 @@
+"""Concrete MongoDB-backed implementation for chat history and chunk storage."""
+
 import asyncio
 from datetime import datetime
 import json
@@ -12,7 +14,11 @@ from langchain_mongodb import MongoDBChatMessageHistory
 from pymongo import MongoClient
 
 logger = logging.getLogger(__name__)
+
+
 class MongoDBClient:
+    """Wraps collections and helper operations for MongoDB-backed persistence."""
+
     def __init__(self):
         load_dotenv()
         self.mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
@@ -81,10 +87,7 @@ class MongoDBClient:
 
 
     async def get_doc_ids_from_mongodb(self, document_id: str) -> list[str]: 
-        """
-        Retrieves ALL unique doc_ids associated with a document_id directly from 
-        the MongoDB collection, ensuring complete coverage.
-        """
+        """Return all underlying Mongo `_id`s for a given logical document_id."""
         docs = await self._fetch_chunks_of_document(document_id)
         return [str(doc["_id"]) for doc in docs]
 
@@ -101,6 +104,7 @@ class MongoDBClient:
             raise e
 
     def revert_history(self, unique_id: str, edit_timestamp: str):
+        """Delete all chat history documents with timestamp >= the edited message."""
         collection = self.client[self.mongodb_database][self.chat_history_collection]
         to_delete_ids = []
 

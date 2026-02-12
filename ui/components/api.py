@@ -1,29 +1,47 @@
+"""Thin HTTP client used by the Streamlit UI to talk to the FastAPI backend."""
+
 import requests
 import json
 
+# Base URL for the backend API. In production this can be configured/overridden.
 BACKEND_URL = "http://localhost:8000"
 
+
 def load_history(document_id, user_id):
+    """Fetch previous chat turns for a given document/user pair."""
     headers = {"document-id": document_id, "user-id": user_id}
     r = requests.get(f"{BACKEND_URL}/get-history", headers=headers)
     r.raise_for_status()
     return r.json().get("chatHistory", [])
 
+
 def upload_document(document_id, b64_pdf):
+    """Send a base64-encoded PDF to the backend for ingestion and indexing."""
     headers = {"document-id": document_id}
     payload = {"file": b64_pdf}
     r = requests.post(f"{BACKEND_URL}/upload-documents", headers=headers, json=payload, timeout=600)
     r.raise_for_status()
 
+
 def clear_history(document_id, user_id):
+    """Clear all stored chat history for the current document/user."""
     headers = {"document-id": document_id, "user-id": user_id}
     requests.delete(f"{BACKEND_URL}/clear-history", headers=headers)
 
+
 def reset_vectors(document_id, user_id):
+    """Delete vector index data and chat history for the current document."""
     headers = {"document-id": document_id, "user-id": user_id}
     requests.delete(f"{BACKEND_URL}/delete-vector", headers=headers)
 
+
 def stream_answer(question, document_id, user_id, username):
+    """Generator that yields incrementally streamed answer/thoughts from backend.
+
+    The backend responds with newline-delimited JSON events; we accumulate the
+    assistant answer, reasoning trace, and reference positions so the UI can
+    render a progressively updating chat message.
+    """
     headers = {
         "document-id": document_id,
         "user-id": user_id,
@@ -42,6 +60,8 @@ def stream_answer(question, document_id, user_id, username):
 
         r.raise_for_status()
 
+        # We keep running aggregates instead of yielding raw deltas so that
+        # the Streamlit UI can simply re-render the full text each tick.
         full_text = ""
         full_thoughts = ""
         references = []
@@ -53,22 +73,24 @@ def stream_answer(question, document_id, user_id, username):
             try:
                 event = json.loads(line.decode())
             except:
+                # Ignore malformed lines instead of breaking the entire stream.
                 continue
 
-            # answer streaming
+            # Answer token streaming from the agent.
             if "chunk" in event:
                 chunk = event["chunk"]
                 if isinstance(chunk, list):
                     chunk = "".join(chunk)
                 full_text += chunk
 
-            # ⭐ accumulate thought tokens into single sentence
+            # ⭐ Accumulate intermediate "thinking" tokens into a single string.
             if "thought" in event:
                 thought = event["thought"]
                 if isinstance(thought, list):
                     thought = "".join(thought)
                 full_thoughts += thought
 
+            # Last seen reference positions (e.g., chunk/page indices).
             if "reference_positions" in event:
                 references = event["reference_positions"]
 

@@ -1,3 +1,5 @@
+"""Integration with Unstructured for PDF chunking and bounding-box extraction."""
+
 import base64
 import json
 import os
@@ -11,7 +13,10 @@ from unstructured_client.models import operations, shared
 
 from models import BoundingBox
 
+
 class UnstructuredProvider:
+    """Configure and call the Unstructured API, then normalize results to `Document`s."""
+
     def __init__(self) -> None:
         load_dotenv()
         unstructured_api_key = os.getenv("UNSTRUCTURED_API_KEY")
@@ -19,6 +24,7 @@ class UnstructuredProvider:
             raise ValueError("UNSTRUCTURED_API_KEY is not set")
         self.unstructured_client = UnstructuredClient(api_key_auth=unstructured_api_key)
 
+        # Chunking and layout parameters are driven via env vars for flexibility.
         self.max_characters = int(os.getenv("UNSTRUCTURED_MAX_CHARACTERS", "6000"))
         self.combine_under_n_chars = int(os.getenv("UNSTRUCTURED_COMBINE_UNDER_N_CHARS", "2250"))
         self.new_after_n_chars = int(os.getenv("UNSTRUCTURED_NEW_AFTER_N_CHARS", "4500"))

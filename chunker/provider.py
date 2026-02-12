@@ -1,10 +1,15 @@
+"""Factory for chunking implementations (currently Unstructured)."""
+
 from typing import List
 
 from langchain_core.documents import Document
 
 from chunker.Unstructured.unstructured import UnstructuredProvider
 
+
 class ChunkerProvider:
+    """Expose a uniform API for turning raw files into `Document` chunks."""
+
     def __init__(self):
         self.unstructured_client = UnstructuredProvider()
 

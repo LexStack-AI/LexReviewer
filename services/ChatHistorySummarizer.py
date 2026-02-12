@@ -1,3 +1,5 @@
+"""Utility for collapsing long chat histories into a short text summary."""
+
 import os
 from typing import List
 
@@ -7,7 +9,10 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from llm_provider.provider import LlmProvider
 
+
 class ChatHistorySummarizer:
+    """Uses an LLM to summarize past messages into a compact conversation summary."""
+
     def __init__(self):
         load_dotenv()
         self.chatbot_name = os.getenv("CHATBOT_NAME", "SPANMIND")
@@ -24,9 +29,11 @@ class ChatHistorySummarizer:
         ])
 
     async def summarize_chat_history(self, chat_history: List[BaseMessage]) -> str:
+        """Convert a list of chat messages into a single summary string."""
         if not chat_history:
             return ""
 
+        # Flatten potentially structured message content into a plain-text transcript.
         history_text = []
         for message in chat_history:
             role = getattr(message, "type", "system")

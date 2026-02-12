@@ -1,3 +1,5 @@
+"""Shared Pydantic and TypedDict models used across the backend and agent graph."""
+
 from enum import Enum
 from typing import List, Optional
 from typing import Any, Dict, List, Optional, TypedDict

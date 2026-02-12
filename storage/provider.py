@@ -1,9 +1,14 @@
+"""Storage abstraction used by services to talk to the MongoDB backend."""
+
 from typing import List
 
 from pymongo.cursor import Cursor
 from storage.MongoDB.mongodb import MongoDBClient
 
+
 class Storage:
+    """Thin façade over the concrete MongoDB client, for easier swapping later."""
+
     def __init__(self):
         self.provider = MongoDBClient()
 

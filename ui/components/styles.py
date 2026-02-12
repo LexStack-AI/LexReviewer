@@ -1,6 +1,10 @@
+"""Custom CSS used to tweak the default Streamlit look & feel."""
+
 import streamlit as st
 
+
 def load_styles():
+    """Inject CSS into the page to style chat bubbles and layout."""
     st.markdown("""
     <style>
         .main {

@@ -1,3 +1,5 @@
+"""Summarize individual document chunks using an LLM, with Langfuse tracing."""
+
 import os
 
 from langchain_core.output_parsers import StrOutputParser
@@ -8,13 +10,16 @@ from langfuse.langchain import CallbackHandler
 
 from llm_provider.provider import LlmProvider
 
+
 class ChunkSummarizer:
+    """Builds a reusable chain that converts raw chunks into concise summaries."""
+
     def __init__(self):
         try:
             # Directory of the current script
             script_dir = os.path.dirname(os.path.abspath(__file__))
 
-            # Path to the text file one level up
+            # Path to the text file one level up that defines the summarization prompt.
             file_path = os.path.abspath(os.path.join(script_dir, "..", "prompts", "chunk_summarizer_context.txt"))
 
             # Convert to absolute path
