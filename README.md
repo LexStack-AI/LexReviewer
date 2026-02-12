@@ -24,6 +24,7 @@ Key features:
 
 - **FastAPI** – HTTP API layer
 - **Uvicorn** – ASGI server
+- **Streamlit** – Web UI for document upload and chat (in `ui/`)
 - **LangChain / LangChain Community / LangChain Core** – LLM orchestration, retrievers, vector stores, memory
 - **LangGraph** – Agent workflow / state machine
 - **Rank-BM25** – BM25 keyword-based retriever
@@ -65,6 +66,14 @@ LexStackMCP/
 ├── app.py                         # FastAPI app, route definitions, uvicorn entrypoint
 ├── models.py                      # Pydantic models and TypedDicts for API and agent state
 ├── DocumentReviewer.py            # LangGraph workflow for document-based QA
+├── ui/
+│   ├── ui_app.py                  # Streamlit entrypoint for the LexStackMCP UI
+│   └── components/
+│       ├── api.py                 # Thin client for FastAPI endpoints (upload, ask, history, reset)
+│       ├── chat.py                # Chat UI, streaming answers and agent thoughts
+│       ├── sidebar.py             # Sidebar controls: document ID, load/clear history, reset document
+│       ├── uploader.py            # PDF upload + indexing UI
+│       └── styles.py              # Global Streamlit CSS tweaks
 ├── agent_graph/
 │   ├── nodes/
 │   │   ├── agent_node.py                      # Main agent node with tool execution loop
@@ -228,6 +237,20 @@ python app.py
 
 `app.py` will start a Uvicorn server, typically on `http://0.0.0.0:8000` with `reload=True` for development.
 
+### Run the Streamlit UI
+
+With the backend running, you can start the Streamlit-based chat UI from the project root:
+
+```bash
+streamlit run ui/ui_app.py
+```
+
+This opens a browser UI where you can:
+
+- Enter a **Document ID** and manage history/reset actions from the sidebar.
+- Upload and index a PDF.
+- Chat with the indexed document using the built-in chat interface.
+
 ### Running with Uvicorn Directly
 
 As an alternative (especially for production-like runs):
@@ -244,6 +267,11 @@ You can adjust the host and port as needed. Additional Uvicorn options (workers,
 ## Usage Guide
 
 ### Overview of User Workflow
+
+You can interact with the system in two ways:
+
+- **Via HTTP API** directly (e.g., `curl`, Postman, or another backend).
+- **Via the built-in Streamlit UI** in `ui/`.
 
 1. **Upload a document (PDF)**  
    Use `/upload-documents` to send a base64-encoded PDF along with a `document-id`.  
@@ -270,6 +298,29 @@ You can adjust the host and port as needed. Additional Uvicorn options (workers,
 4. **Manage document index**  
    Use `/collection-exists` to check if a document (or several) has already been indexed.  
    Use `/delete-vector` to remove the indexed vectors and history for a document.
+
+### Using the built-in Streamlit UI
+
+The Streamlit UI (`ui/ui_app.py`) wires these workflows into an interactive web app:
+
+- **Document selection & history controls** (`ui/components/sidebar.py`):
+  - Set the active `document_id`.
+  - **Load History** – calls `GET /get-history` and populates the chat view.
+  - **Clear History** – calls `DELETE /clear-history` and clears the local chat state.
+  - **Reset Document** – calls `DELETE /delete-vector` to remove vectors and history for the current document.
+
+- **Document upload & indexing** (`ui/components/uploader.py`):
+  - Upload a PDF via file picker.
+  - On **Index Document**, encodes the file to base64 and calls `POST /upload-documents`.
+  - On success, sets `st.session_state.document_indexed = True`, which unlocks the chat panel.
+
+- **Chat with the document** (`ui/components/chat.py` + `ui/components/api.py`):
+  - Renders previous Q&A pairs from `st.session_state.chat_messages`.
+  - Uses a `st.chat_input` to send questions.
+  - Streams answers via `POST /ask` (NDJSON):
+    - Accumulates `chunk` events into the answer text.
+    - Accumulates `thought` events into a single **“Agent Thinking”** expander.
+    - Ignores `reference_positions` in the UI for now but keeps them available in the stored messages.
 
 ### Example: Upload Document
 
