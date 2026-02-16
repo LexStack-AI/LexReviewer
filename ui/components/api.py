@@ -1,11 +1,11 @@
 """Thin HTTP client used by the Streamlit UI to talk to the FastAPI backend."""
 
+from typing import Any, List
 import requests
 import json
 
 # Base URL for the backend API. In production this can be configured/overridden.
 BACKEND_URL = "http://localhost:8000"
-
 
 def load_history(document_id, user_id):
     """Fetch previous chat turns for a given document/user pair."""
@@ -14,6 +14,19 @@ def load_history(document_id, user_id):
     r.raise_for_status()
     return r.json().get("chatHistory", [])
 
+def save_message(document_id: str, user_id: str, question: str, answer: str, thoughts: List[str] | str | None, reference_positions: List[Any]):
+    """Saves the chat message in history."""
+    headers = {"document-id": document_id, "user-id": user_id}
+    if isinstance(thoughts, str):
+        thoughts = [thoughts]
+    body = {
+        "question": question,
+        "answer": answer,
+        "thoughts": thoughts,
+        "reference_positions": reference_positions
+    }
+    r = requests.post(f"{BACKEND_URL}/save-message-in-history", headers=headers, json=body)
+    r.raise_for_status()
 
 def upload_document(document_id, b64_pdf):
     """Send a base64-encoded PDF to the backend for ingestion and indexing."""
