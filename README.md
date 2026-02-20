@@ -1,6 +1,6 @@
 <div align="center">
   <div style="margin: 20px 0;">
-    <img src="./assets/logo.png" width="120" height="120" alt="RAG-Anything Logo" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 217, 255, 0.3);">
+    <img src="./assets/logo.png" alt="RAG-Anything Logo" style="width: 50%; max-width: 400px; border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 217, 255, 0.3);">
   </div>
 
   # 🚀 LexReviewer – Legal Document Chat & RAG Service
