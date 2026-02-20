@@ -1,147 +1,49 @@
-## LexReviewer – Legal Document Chat & RAG Service
+<div align="center">
+  <div style="margin: 20px 0;">
+    <img src="./assets/logo.png" width="120" height="120" alt="RAG-Anything Logo" style="border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 217, 255, 0.3);">
+  </div>
 
-LexReviewer is a Python-based backend service that lets you **upload legal PDFs, index them into a retrieval-augmented generation (RAG) pipeline, and chat with those documents**. It focuses on **legal document understanding**, providing answers grounded in the source text, along with **reference positions / bounding boxes** that can be used for highlighting.  
-It solves the problem of turning raw legal PDFs into an interactive, citation-aware chat experience, with support for chat history, document-linked retrieval, and observability hooks.  
+  # 🚀 LexReviewer – Legal Document Chat & RAG Service
+</div>
 
-Key features:
+**Citation-aware legal document chat**
 
-- **PDF ingestion and chunking** via Unstructured.io
-- **Vector-based retrieval** backed by Qdrant, plus BM25 keyword search
-- **RAG chat endpoint** with streaming responses (NDJSON), including thoughts and references
-- **Chat history management** stored in MongoDB
-- **Linked document retrieval** through an external HTTP tool
-- **Observability integration** via Langfuse and optional Sentry
+Legal PDFs are a pain to search, and you can’t really “talk” to them, plus when you do get answers elsewhere, they often lack traceable citations, so you can’t point to the exact spot in the source or highlight it. LexReviewer tackles that by turning your legal PDFs into an interactive, **citation-aware chat experience**. Upload documents, index them into a RAG pipeline, and ask questions; answers stay grounded in the source text with **reference positions and bounding boxes** you can use for highlighting.
+
+As a single backend service, **LexReviewer** brings together PDF ingestion, vector + keyword retrieval, streaming RAG chat, chat history, and document-linked retrieval, so you don’t need to wire up a bunch of tools yourself. It’s built with legal document understanding in mind and fits well for contract review, compliance, research, and any workflow where you need to query and cite from large PDF collections.
+
+**What’s included:**
+
+- 🤖 **LangGraph-powered agent** — Picks the right tools per question (in-doc search, linked docs, or both) so you get focused answers instead of a one-size-fits-all pipeline; handles multi-step queries and follow-ups in context.
+- 📄 **PDF ingestion & chunking** — Unstructured.io turns your PDFs into searchable chunks so the agent can pull the right passages.
+- 🔍 **Vector + BM25 retrieval** — Qdrant plus keyword search so both semantic and exact-phrase questions hit the right content.
+- 💬 **Streaming RAG chat** — Answers stream as NDJSON with thoughts and references, so you see citations and can highlight in the source as they arrive.
+- 📚 **Chat history** — Persisted in MongoDB so the agent keeps conversation context and follow-up questions stay grounded.
+- 🔗 **Linked document awareness** — When your doc references amendments, schedules, or MSAs, the agent can fetch and query those too for full contract context.
+- 📊 **Observability** — Langfuse and optional Sentry so you can trace and debug runs without guessing.
 
 ---
 
 ## Tech Stack
 
-### Languages
-
-- **Python**
-
-### Frameworks & Core Libraries
-
-- **FastAPI** – HTTP API layer
-- **Uvicorn** – ASGI server
-- **Streamlit** – Web UI for document upload and chat (in `ui/`)
-- **LangChain / LangChain Community / LangChain Core** – LLM orchestration, retrievers, vector stores, memory
-- **LangGraph** – Agent workflow / state machine
-- **Rank-BM25** – BM25 keyword-based retriever
-
-### LLM & Embeddings
-
-- **OpenAI** (via `openai` and `langchain-openai`)
-  - Chat models (e.g., `gpt-4`, `gpt-4.1-mini`, `gpt-5.2` per config)
-  - Embedding model (`text-embedding-3-large`)
-
-### Storage & Retrieval
-
-- **MongoDB**
-  - Chat history (`MongoDBChatMessageHistory`)
-  - Document store (`MongoDBStore`)
-- **Qdrant**
-  - Vector store for chunk embeddings (`langchain-qdrant`, `qdrant-client`)
-  - Configurable collection, vector size, and filtering by `document_id`
-
-### Document Processing
-
-- **Unstructured.io** (`unstructured-client`)
-  - PDF parsing and chunking
-  - Output metadata includes positions / bounding boxes
-
-### Observability & Telemetry
-
-- **Langfuse** – Tracing & metrics
-- **Sentry** – Error tracking
-
----
-
-## Project Structure
-
-High-level layout:
-
-```text
-LexReviewer/
-├── app.py                         # FastAPI app, route definitions, uvicorn entrypoint
-├── models.py                      # Pydantic models and TypedDicts for API and agent state
-├── DocumentReviewer.py            # LangGraph workflow for document-based QA
-├── ui/
-│   ├── ui_app.py                  # Streamlit entrypoint for the LexReviewer UI
-│   └── components/
-│       ├── api.py                 # Thin client for FastAPI endpoints (upload, ask, history, reset)
-│       ├── chat.py                # Chat UI, streaming answers and agent thoughts
-│       ├── sidebar.py             # Sidebar controls: document ID, load/clear history, reset document
-│       ├── uploader.py            # PDF upload + indexing UI
-│       └── styles.py              # Global Streamlit CSS tweaks
-├── agent_graph/
-│   ├── nodes/
-│   │   ├── agent_node.py                      # Main agent node with tool execution loop
-│   │   ├── agent_prompt_generator_node.py     # Builds the agent's prompt/context
-│   │   ├── required_tools_generator_node.py   # Chooses which tools to call
-│   │   └── utils/
-│   │       └── tool_executor.py               # Utility to call tools from the agent
-│   └── tools/
-│       ├── document_retriever.py              # Tool to retrieve chunks from Qdrant + MongoDB
-│       ├── linked_documents.py                # Tool to fetch linked documents via HTTP
-│       └── utils/
-│           └── tool_config.py                 # Tool configuration helpers
-├── chunker/
-│   ├── provider.py                            # Chunker provider abstraction
-│   └── Unstructured/
-│       └── unstructured.py                    # Unstructured.io-based PDF chunker
-├── llm_provider/
-│   ├── provider.py                            # LLM provider abstraction
-│   └── OpenAI/
-│       └── openai.py                          # OpenAI-backed LLM & embeddings
-├── observation/
-│   ├── provider.py                            # Observation provider abstraction
-│   ├── Langfuse/
-│   │   └── langfuse.py                        # Langfuse client integration
-│   └── Sentry/
-│       └── sentry.py                          # Sentry initialization
-├── prompts/
-│   ├── legal_answer_prompt.txt                # System prompt for legal QA
-│   └── chunk_summarizer_context.txt           # Prompt for chunk summarization
-├── services/
-│   ├── ChatHistorySummarizer.py               # Summarizes long chat histories
-│   ├── ChunkSummarizer.py                     # Summarizes chunks prior to indexing
-│   ├── EmbeddingIndexer.py                    # Indexes summarized chunks into Qdrant + Mongo
-│   ├── PDFChunker.py                          # Uses Unstructured.io to chunk PDFs
-│   ├── RAGIngestPipeline.py                   # Orchestrates ingestion: PDF → chunks → summaries → index
-│   └── chat_service.py                        # Application-level chat logic and routing to agent
-├── storage/
-│   ├── provider.py                            # Storage provider abstraction
-│   └── MongoDB/
-│       └── mongodb.py                         # MongoDB-backed chat history + docstore
-├── vector_storage/
-│   ├── provider.py                            # Vector storage provider abstraction
-│   └── Qdrant/
-│       └── qdrant.py                          # Qdrant vector store configuration and access
-├── .env.example                               # Example environment configuration
-├── requirements.txt                           # Python dependencies (pinned versions)
-└── .gitignore
-```
-
-**Important components:**
-
-- **`app.py`**: Defines the FastAPI application, registers all routes, and includes a main block that runs `uvicorn` for local development.
-- **`DocumentReviewer.py`**: Builds a LangGraph graph that manages the flow:
-  - Generate required tools → build agent prompt → run the agent with tool calls.
-- **`agent_graph/nodes`**: Implements discrete LangGraph nodes:
-  - **`required_tools_generator_node`**: Decides which tools (e.g., retrievers) to call.
-  - **`agent_prompt_generator_node`**: Constructs prompts with context, chat history, and instructions.
-  - **`agent_node`**: Runs the LLM agent and handles tool invocation.
-- **`agent_graph/tools`**:
-  - **`document_retriever`**: Retrieves relevant document chunks from Qdrant and Mongo docstore, including metadata such as bounding boxes.
-  - **`linked_documents`**: Calls an external service to fetch additional/linked documents.
-- **`services`**: Application-level services for:
-  - PDF chunking and summarization (`PDFChunker`, `ChunkSummarizer`)
-  - Indexing into Qdrant and Mongo (`EmbeddingIndexer`, `RAGIngestPipeline`)
-  - Chat management and orchestration (`chat_service`)
-- **`storage` / `vector_storage`**: Provider abstractions and concrete implementations for MongoDB and Qdrant.
-- **`observation`**: Pluggable observability (Langfuse, Sentry).
-- **`prompts`**: Prompt templates used for legal answer formatting and chunk summarization.
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><strong>Language</strong></td><td>Python</td></tr>
+<tr><td><strong>API</strong></td><td>FastAPI, Uvicorn</td></tr>
+<tr><td><strong>Web UI</strong></td><td>Streamlit (<code>ui/</code>)</td></tr>
+<tr><td><strong>RAG / Agent</strong></td><td>LangChain, LangChain Community, LangChain Core, LangGraph, Rank-BM25</td></tr>
+<tr><td><strong>LLM &amp; Embeddings</strong></td><td>OpenAI (chat models e.g. gpt-4, gpt-4.1-mini, gpt-5.2; embedding <code>text-embedding-3-large</code>)</td></tr>
+<tr><td><strong>Storage</strong></td><td>MongoDB (chat history, doc store), Qdrant (vector embeddings, filter by <code>document_id</code>)</td></tr>
+<tr><td><strong>Document processing</strong></td><td>Unstructured.io – PDF parsing, chunking, positions/bounding boxes</td></tr>
+<tr><td><strong>Observability</strong></td><td>Langfuse, Sentry</td></tr>
+</tbody>
+</table>
 
 ---
 
@@ -177,90 +79,44 @@ pip install -r requirements.txt
 
 ### Environment Variables
 
-Use `.env` at the project root (see `.env.example` for a complete list). Key variables include:
+Use `.env` at the project root. **Key variables** (minimum to run):
 
-- **Application & prompts**
-  - `CHATBOT_NAME` – Name used in prompts (default: `LexReviewer`).
-  - `AGENT_MODEL` – Default agent model when reasoning is disabled (e.g., `gpt-4`).
-  - `REASNONING_AGENT_MODEL` – Agent model when reasoning is enabled (`gpt-5.2` by default; note the variable name typo).
-  - `AGENT_REASONING_ALLOWED` – `"true"`/`"false"` to enable or disable reasoning mode.
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | Required for LLM and embeddings |
+| `UNSTRUCTURED_API_KEY` | Required for PDF chunking |
+| `MONGODB_URL` | MongoDB connection (default `mongodb://localhost:27017`) |
+| `QDRANT_URL` | Qdrant endpoint |
+| `LINKED_DOCUMENT_FETCH_URL` | Base URL for linked documents retriever |
 
-- **Linked documents**
-  - `LINKED_DOCUMENT_FETCH_URL` – Base URL for the linked documents retriever tool.
+Create your `.env`: `cp .env.example .env` then edit. See `.env.example` for the full list.
 
-- **Unstructured.io (chunking)**
-  - `UNSTRUCTURED_API_KEY` – Required for PDF chunking.
-  - Several `UNSTRUCTURED_*` options (max chars, overlap, strategy, etc.) to tune chunking behavior.
+<details>
+<summary><strong>Full environment variable list</strong></summary>
 
-- **OpenAI**
-  - `OPENAI_API_KEY` – Required.
-  - `OPENAI_CHAT_SUMMARY_MODEL` – Model for chat history summarization (default `gpt-4.1-mini`).
-  - `OPENAI_CHUNK_SUMMARY_MODEL` – Model for chunk summarization (default `gpt-4.1-mini`).
-  - `REQUIRED_TOOLS_GENERATOR_MODEL` – Model for deciding required tools.
-  - `OPENAI_EMBEDDING_MODEL_NAME` – Embedding model name (`text-embedding-3-large` default).
+- **Application & prompts:** `CHATBOT_NAME`, `AGENT_MODEL`, `REASNONING_AGENT_MODEL` (note typo), `AGENT_REASONING_ALLOWED`
+- **Linked documents:** `LINKED_DOCUMENT_FETCH_URL`
+- **Unstructured.io:** `UNSTRUCTURED_API_KEY`, plus `UNSTRUCTURED_*` options (max chars, overlap, strategy, etc.)
+- **OpenAI:** `OPENAI_API_KEY`, `OPENAI_CHAT_SUMMARY_MODEL`, `OPENAI_CHUNK_SUMMARY_MODEL`, `REQUIRED_TOOLS_GENERATOR_MODEL`, `OPENAI_EMBEDDING_MODEL_NAME`
+- **MongoDB:** `MONGODB_URL`, `MONGODB_DATABASE`, `MONGODB_CHAT_HISTORY_COLLECTION_NAME`, `MONGODB_DOC_STORE_COLLECTION_NAME`
+- **Qdrant:** `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_TIMEOUT`, `QDRANT_COLLECTION_NAME`, `QDRANT_VECTOR_SIZE`
+- **Observability (optional):** `SENTRY_DSN`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_HOST`
 
-- **MongoDB**
-  - `MONGODB_URL` – Connection string (default `mongodb://localhost:27017`).
-  - `MONGODB_DATABASE` – Database name (default `lexstack`).
-  - `MONGODB_CHAT_HISTORY_COLLECTION_NAME` – Chat history collection (default `chat_history`).
-  - `MONGODB_DOC_STORE_COLLECTION_NAME` – Document store collection (default `doc_store`).
-
-- **Qdrant**
-  - `QDRANT_URL` – Qdrant endpoint URL.
-  - `QDRANT_API_KEY` – Qdrant API key (if required by your instance).
-  - `QDRANT_TIMEOUT` – Request timeout (seconds, default `60`).
-  - `QDRANT_COLLECTION_NAME` – Collection name (default `documents`).
-  - `QDRANT_VECTOR_SIZE` – Vector dimensionality (default `3072`).
-
-- **Observability (optional)**
-  - `SENTRY_DSN` – Sentry DSN for error tracking.
-  - `LANGFUSE_SECRET_KEY`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_HOST` – Langfuse configuration.
-
-Create your `.env` by copying the example:
-
-```bash
-cp .env.example .env
-# Then edit .env with your own keys and URLs
-```
+</details>
 
 ---
 
-## How to Run the Application
+## How to Run
 
-### Local Development
+From the project root (after installing dependencies and configuring `.env`):
 
-From the project root, after installing dependencies and configuring `.env`:
+| Command | Purpose |
+|--------|--------|
+| `python app.py` | Start API (Uvicorn with reload) at `http://0.0.0.0:8000` |
+| `streamlit run ui/ui_app.py` | Start Streamlit chat UI (backend must be running) |
+| `uvicorn app:app --host 0.0.0.0 --port 8000` | Run API without reload (e.g. production) |
 
-```bash
-python app.py
-```
-
-`app.py` will start a Uvicorn server, typically on `http://0.0.0.0:8000` with `reload=True` for development.
-
-### Run the Streamlit UI
-
-With the backend running, you can start the Streamlit-based chat UI from the project root:
-
-```bash
-streamlit run ui/ui_app.py
-```
-
-This opens a browser UI where you can:
-
-- Enter a **Document ID** and manage history/reset actions from the sidebar.
-- Upload and index a PDF.
-- Chat with the indexed document using the built-in chat interface.
-
-### Running with Uvicorn Directly
-
-As an alternative (especially for production-like runs):
-
-```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
-```
-
-You can adjust the host and port as needed. Additional Uvicorn options (workers, logging) are up to your deployment environment.
-
+The Streamlit UI lets you set a document ID in the sidebar, upload/index a PDF, and chat with the indexed document.
 
 ---
 
@@ -301,86 +157,18 @@ You can interact with the system in two ways:
 
 ### Using the built-in Streamlit UI
 
-The Streamlit UI (`ui/ui_app.py`) wires these workflows into an interactive web app:
+The Streamlit UI (`ui/ui_app.py`) wires upload, chat, and history into an interactive web app.
 
-- **Document selection & history controls** (`ui/components/sidebar.py`):
-  - Set the active `document_id`.
-  - **Load History** – calls `GET /get-history` and populates the chat view.
-  - **Clear History** – calls `DELETE /clear-history` and clears the local chat state.
-  - **Reset Document** – calls `DELETE /delete-vector` to remove vectors and history for the current document.
+<details>
+<summary><strong>Streamlit component map</strong></summary>
 
-- **Document upload & indexing** (`ui/components/uploader.py`):
-  - Upload a PDF via file picker.
-  - On **Index Document**, encodes the file to base64 and calls `POST /upload-documents`.
-  - On success, sets `st.session_state.document_indexed = True`, which unlocks the chat panel.
+- **Document selection & history** (`ui/components/sidebar.py`): Set active `document_id`. **Load History** → `GET /get-history`. **Clear History** → `DELETE /clear-history`. **Reset Document** → `DELETE /delete-vector`.
+- **Upload & indexing** (`ui/components/uploader.py`): PDF file picker; **Index Document** base64-encodes and calls `POST /upload-documents`; on success unlocks chat panel.
+- **Chat** (`ui/components/chat.py` + `api.py`): Renders Q&A from `st.session_state.chat_messages`; `st.chat_input` sends questions; streams via `POST /ask` (NDJSON): `chunk` → answer text, `thought` → “Agent Thinking” expander; `reference_positions` stored in messages (not yet rendered in UI).
 
-- **Chat with the document** (`ui/components/chat.py` + `ui/components/api.py`):
-  - Renders previous Q&A pairs from `st.session_state.chat_messages`.
-  - Uses a `st.chat_input` to send questions.
-  - Streams answers via `POST /ask` (NDJSON):
-    - Accumulates `chunk` events into the answer text.
-    - Accumulates `thought` events into a single **“Agent Thinking”** expander.
-    - Ignores `reference_positions` in the UI for now but keeps them available in the stored messages.
+</details>
 
-### Example: Upload Document
-
-```bash
-curl -X POST http://localhost:8000/upload-documents \
-  -H "Content-Type: application/json" \
-  -H "document-id: DOC_123" \
-  -d '{
-        "file": "<BASE64_ENCODED_PDF_CONTENT>"
-      }'
-```
-
-- **Headers**:
-  - `document-id`: A string you choose to identify this document (e.g., `case_2024_01`).
-
-### Example: Ask a Question (Streaming)
-
-```bash
-curl -N -X POST http://localhost:8000/ask \
-  -H "Content-Type: application/json" \
-  -H "document-id: DOC_123" \
-  -H "user-id: USER_1" \
-  -H "username: alice" \
-  -d '{
-        "question": "What are the main obligations of the tenant under this lease?"
-      }'
-```
-
-- **Response**: NDJSON stream with lines like:
-
-```json
-{"chunk": "The tenant must pay rent on time..."}
-{"thought": ["Checking", "clauses", "related", "to", "payment", "and", "maintenance."]}
-{"reference_positions": [{ "page": 3, "x1": ..., "y1": ..., "x2": ..., "y2": ... }]}
-{"chunk": "Additionally, the tenant is responsible for utilities..."}
-```
-
-You can consume this stream in your frontend to render a progressively updating answer, legal reasoning snippets, and highlight positions in the document.
-
-### Example: Get Chat History
-
-```bash
-curl -X GET "http://localhost:8000/get-history" \
-  -H "document-id: DOC_123" \
-  -H "user-id: USER_1"
-```
-
-- Returns:
-  - A structure (e.g., `HistoryResponse`) with a list of chat entries, each including the question, answer, thoughts, and reference positions.
-
-### Example: Check If a Document Is Indexed
-
-```bash
-curl -X POST http://localhost:8000/collection-exists \
-  -H "Content-Type: application/json" \
-  -H "document-ids: DOC_123" \
-  -d '{}'
-```
-
-> Note: `collection-exists` uses a header list (`document_ids: List[str] = Header(...)`), which may require passing multiple header values depending on your HTTP client.
+For request/response examples and curl snippets, see **Detailed API request/response** under [API Endpoints](#api-endpoints).
 
 ---
 
@@ -449,101 +237,78 @@ There is **no separate frontend** in this repo; it is purely a backend API inten
 
 ---
 
-## Available Scripts and Commands
-
-There are no custom CLI scripts or `pyproject.toml` console entry points in the repository. The main commands are:
-
-- **Run the API (development)**:
-
-  ```bash
-  python app.py
-  ```
-
-- **Run the API with Uvicorn**:
-
-  ```bash
-  uvicorn app:app --host 0.0.0.0 --port 8000
-  ```
-
-You may create your own wrapper scripts or process manager configuration (e.g., `systemd`, `supervisord`, container entrypoints) as needed.
-
----
-
 ## API Endpoints
 
-The following endpoints are defined in `app.py` (all paths relative to the API root):
+Endpoints are defined in `app.py`. Request/response shapes: `models.py` and OpenAPI schema.
 
-- **`POST /upload-documents`**
-  - **Headers**:
-    - `document-id`: ID for the document being uploaded.
-  - **Body** (`DocumentUploadRequest`):
-    - `file: str` – Base64-encoded PDF.
-  - **Behavior**:
-    - Triggers ingestion pipeline to chunk, summarize, embed, and index the document.
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Key headers / body</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr><td><code>/upload-documents</code></td><td>POST</td><td><code>document-id</code>; body: <code>file</code> (base64 PDF)</td><td>Chunk, embed, index document</td></tr>
+<tr><td><code>/collection-exists</code></td><td>POST</td><td><code>document-ids</code></td><td>Check if document(s) are indexed</td></tr>
+<tr><td><code>/ask</code></td><td>POST</td><td><code>document-id</code>, <code>user-id</code>, <code>username</code>; body: <code>question</code></td><td>Stream NDJSON (chunk, thought, reference_positions)</td></tr>
+<tr><td><code>/get-history</code></td><td>GET</td><td><code>document-id</code>, <code>user-id</code></td><td>Return chat history</td></tr>
+<tr><td><code>/save-message-in-history</code></td><td>POST</td><td><code>document-id</code>, <code>user-id</code>; body: message data</td><td>Persist or update chat entry</td></tr>
+<tr><td><code>/revert-history</code></td><td>POST</td><td><code>document-id</code>, <code>user-id</code>; body: <code>index</code></td><td>Truncate history to index</td></tr>
+<tr><td><code>/clear-history</code></td><td>DELETE</td><td><code>document-id</code>, <code>user-id</code></td><td>Clear chat history</td></tr>
+<tr><td><code>/delete-vector</code></td><td>DELETE</td><td><code>document-id</code>, <code>user-id</code></td><td>Delete vectors and doc/chat data for document</td></tr>
+</tbody>
+</table>
 
-- **`POST /collection-exists`**
-  - **Headers**:
-    - `document-ids`: One or more document IDs (list semantics via headers).
-  - **Body**:
-    - Currently not used for payload (header-based identifiers).
-  - **Behavior**:
-    - Checks if vector/index data exists for the given document IDs.
+<details>
+<summary><strong>Detailed API request/response (headers, body, examples)</strong></summary>
 
-- **`POST /ask`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-    - `username`
-  - **Body** (`AskQuestionRequest`):
-    - `question: str`
-  - **Response**:
-    - **Content-Type**: `application/x-ndjson`
-    - Streams events with:
-      - `chunk` – parts of the answer.
-      - `thought` – agent reasoning or intermediate commentary.
-      - `reference_positions` – list of reference positions/bounding boxes.
-      - `error` – error messages if any.
+**POST /upload-documents** — Headers: `document-id`. Body: `DocumentUploadRequest` with `file: str` (base64 PDF). Triggers ingestion pipeline.
 
-- **`POST /save-message-in-history`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-  - **Body**:
-    - Contains message/history data (structured via models in `models.py`).
-  - **Behavior**:
-    - Persists or updates entries in the chat history for the given user and document.
+**POST /collection-exists** — Headers: `document-ids` (list). Checks if vector/index exists for given IDs.
 
-- **`POST /revert-history`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-  - **Body** (`EditQuestionRequest`-like):
-    - `index: int` – History index to revert to.
-  - **Behavior**:
-    - Truncates chat history back to the specified index.
+**POST /ask** — Headers: `document-id`, `user-id`, `username`. Body: `AskQuestionRequest` with `question: str`. Response: `application/x-ndjson` with `chunk`, `thought`, `reference_positions`, `error`.
 
-- **`DELETE /delete-vector`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-  - **Behavior**:
-    - Deletes vector index data in Qdrant and associated document/chat store data for that document.
+**GET /get-history** — Headers: `document-id`, `user-id`. Response: `HistoryResponse` with `chatHistory: List[ChatEntry]` (question, answer, thoughts, reference positions).
 
-- **`DELETE /clear-history`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-  - **Behavior**:
-    - Clears chat history for the given user and document.
+**POST /save-message-in-history** — Headers: `document-id`, `user-id`. Body: message/history data. Persists or updates chat entry.
 
-- **`GET /get-history`**
-  - **Headers**:
-    - `document-id`
-    - `user-id`
-  - **Response** (`HistoryResponse`):
-    - `chatHistory: List[ChatEntry]` where each entry includes question, answer, thoughts, and reference positions.
+**POST /revert-history** — Headers: `document-id`, `user-id`. Body: `index: int`. Truncates history to that index.
 
-> Note: Exact field names and structures are defined in `models.py`. This README describes their roles at a high level.
+**DELETE /clear-history** — Headers: `document-id`, `user-id`. Clears chat history.
+
+**DELETE /delete-vector** — Headers: `document-id`, `user-id`. Deletes Qdrant vectors and associated MongoDB data for that document.
+
+**Example: Upload**
+```bash
+curl -X POST http://localhost:8000/upload-documents \
+  -H "Content-Type: application/json" -H "document-id: DOC_123" \
+  -d '{"file": "<BASE64_ENCODED_PDF_CONTENT>"}'
+```
+
+**Example: Ask (streaming)**
+```bash
+curl -N -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -H "document-id: DOC_123" -H "user-id: USER_1" -H "username: alice" \
+  -d '{"question": "What are the main obligations of the tenant under this lease?"}'
+```
+Response lines: `{"chunk": "..."}`, `{"thought": [...]}`, `{"reference_positions": [{ "page", "x1", "y1", "x2", "y2" }]}`.
+
+**Example: Get history**
+```bash
+curl -X GET "http://localhost:8000/get-history" -H "document-id: DOC_123" -H "user-id: USER_1"
+```
+
+**Example: Check indexed**
+```bash
+curl -X POST http://localhost:8000/collection-exists \
+  -H "Content-Type: application/json" -H "document-ids: DOC_123" -d '{}'
+```
+
+</details>
 
 ---
 
@@ -628,3 +393,13 @@ Scaling, containerization, and orchestration are left to your infrastructure/pla
 Please coordinate with the project maintainers for coding style and review expectations if this is part of a larger organization.
 
 ---
+
+<div align="center">
+  <div style="width: 100%; max-width: 600px; margin: 20px auto; padding: 20px;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
+      <span style="font-size: 24px;">⭐</span>
+      <span style="font-size: 18px;">Thank you for visiting LexReviewer!</span>
+      <span style="font-size: 24px;">⭐</span>
+    </div>
+  </div>
+</div>
