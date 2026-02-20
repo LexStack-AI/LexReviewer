@@ -1,4 +1,4 @@
-"""Streamlit frontend for the LexStackMCP document QA experience."""
+"""Streamlit frontend for the LexReviewerMCP document QA experience."""
 
 import uuid
 
@@ -10,11 +10,11 @@ from components.pdf import render_pdf
 from components.styles import load_styles
 from components.uploader import render_uploader
 
-st.set_page_config(page_title="LexStackMCP", layout="wide")
+st.set_page_config(page_title="LexReviewerMCP", layout="wide")
 
 load_styles()
 
-st.markdown('<h1 style="padding-top: 3rem;">LexStackMCP</h1>', unsafe_allow_html=True)
+st.markdown('<h1 style="padding-top: 3rem;">LexReviewerMCP</h1>', unsafe_allow_html=True)
 
 # Session identifiers
 if "user_id" not in st.session_state:

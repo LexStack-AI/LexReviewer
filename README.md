@@ -1,6 +1,6 @@
-## LexStackMCP – Legal Document Chat & RAG Service
+## LexReviewerMCP – Legal Document Chat & RAG Service
 
-LexStackMCP is a Python-based backend service that lets you **upload legal PDFs, index them into a retrieval-augmented generation (RAG) pipeline, and chat with those documents**. It focuses on **legal document understanding**, providing answers grounded in the source text, along with **reference positions / bounding boxes** that can be used for highlighting.  
+LexReviewerMCP is a Python-based backend service that lets you **upload legal PDFs, index them into a retrieval-augmented generation (RAG) pipeline, and chat with those documents**. It focuses on **legal document understanding**, providing answers grounded in the source text, along with **reference positions / bounding boxes** that can be used for highlighting.  
 It solves the problem of turning raw legal PDFs into an interactive, citation-aware chat experience, with support for chat history, document-linked retrieval, and observability hooks.  
 
 Key features:
@@ -62,12 +62,12 @@ Key features:
 High-level layout:
 
 ```text
-LexStackMCP/
+LexReviewerMCP/
 ├── app.py                         # FastAPI app, route definitions, uvicorn entrypoint
 ├── models.py                      # Pydantic models and TypedDicts for API and agent state
 ├── DocumentReviewer.py            # LangGraph workflow for document-based QA
 ├── ui/
-│   ├── ui_app.py                  # Streamlit entrypoint for the LexStackMCP UI
+│   ├── ui_app.py                  # Streamlit entrypoint for the LexReviewerMCP UI
 │   └── components/
 │       ├── api.py                 # Thin client for FastAPI endpoints (upload, ask, history, reset)
 │       ├── chat.py                # Chat UI, streaming answers and agent thoughts
@@ -180,7 +180,7 @@ pip install -r requirements.txt
 Use `.env` at the project root (see `.env.example` for a complete list). Key variables include:
 
 - **Application & prompts**
-  - `CHATBOT_NAME` – Name used in prompts (default: `SPANMIND`).
+  - `CHATBOT_NAME` – Name used in prompts (default: `LexReviewer`).
   - `AGENT_MODEL` – Default agent model when reasoning is disabled (e.g., `gpt-4`).
   - `REASNONING_AGENT_MODEL` – Agent model when reasoning is enabled (`gpt-5.2` by default; note the variable name typo).
   - `AGENT_REASONING_ALLOWED` – `"true"`/`"false"` to enable or disable reasoning mode.

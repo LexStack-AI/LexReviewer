@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AgentPromptGeneratorNode:
     def __init__(self):
         load_dotenv()
-        self.chatbot_name = os.getenv("CHATBOT_NAME", "SPANMIND")
+        self.chatbot_name = os.getenv("CHATBOT_NAME", "LexReviewer")
         self.tool_config = ToolConfig()
 
     async def run(self, state: AgentState) -> AgentState:
@@ -32,17 +32,21 @@ class AgentPromptGeneratorNode:
         return state
 
     def _load_legal_answer_prompt(self) -> str:
-        """Load the legal answer prompt from legal_answer_prompt.txt."""
+        fallback = (
+            f"You are {self.chatbot_name}, an AI legal assistant trained to behave like a seasoned attorney. "
+            "Provide concise, citation-rich answers grounded in retrieved document evidence."
+        )
+
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(script_dir, "..", "..", "prompts" "legal_answer_prompt.txt")
+            file_path = os.path.join(script_dir, "..", "..", "prompts", "legal_answer_prompt.txt")
+
             with open(os.path.abspath(file_path), "r", encoding="utf-8") as file:
-                return file.read()
+                content = file.read()
         except Exception:
-            return (
-                f"You are {self.chatbot_name}, an AI legal assistant trained to behave like a seasoned attorney. "
-                "Provide concise, citation-rich answers grounded in retrieved document evidence."
-            )
+            content = ""
+
+        return content + "\n\n" + fallback
 
     def _build_tool_context(self, required_tools: list) -> str:
         """Build tool usage context for the required tools only."""

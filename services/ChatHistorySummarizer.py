@@ -15,7 +15,7 @@ class ChatHistorySummarizer:
 
     def __init__(self):
         load_dotenv()
-        self.chatbot_name = os.getenv("CHATBOT_NAME", "SPANMIND")
+        self.chatbot_name = os.getenv("CHATBOT_NAME", "LexReviewer")
         self.llm_provider = LlmProvider()
         self.chat_history_summary_model = self.llm_provider.get_chat_history_summary_model()
         self.chat_history_summary_prompt = ChatPromptTemplate.from_messages([
