@@ -1,6 +1,6 @@
-## LexReviewerMCP – Legal Document Chat & RAG Service
+## LexReviewer – Legal Document Chat & RAG Service
 
-LexReviewerMCP is a Python-based backend service that lets you **upload legal PDFs, index them into a retrieval-augmented generation (RAG) pipeline, and chat with those documents**. It focuses on **legal document understanding**, providing answers grounded in the source text, along with **reference positions / bounding boxes** that can be used for highlighting.  
+LexReviewer is a Python-based backend service that lets you **upload legal PDFs, index them into a retrieval-augmented generation (RAG) pipeline, and chat with those documents**. It focuses on **legal document understanding**, providing answers grounded in the source text, along with **reference positions / bounding boxes** that can be used for highlighting.  
 It solves the problem of turning raw legal PDFs into an interactive, citation-aware chat experience, with support for chat history, document-linked retrieval, and observability hooks.  
 
 Key features:
@@ -62,12 +62,12 @@ Key features:
 High-level layout:
 
 ```text
-LexReviewerMCP/
+LexReviewer/
 ├── app.py                         # FastAPI app, route definitions, uvicorn entrypoint
 ├── models.py                      # Pydantic models and TypedDicts for API and agent state
 ├── DocumentReviewer.py            # LangGraph workflow for document-based QA
 ├── ui/
-│   ├── ui_app.py                  # Streamlit entrypoint for the LexReviewerMCP UI
+│   ├── ui_app.py                  # Streamlit entrypoint for the LexReviewer UI
 │   └── components/
 │       ├── api.py                 # Thin client for FastAPI endpoints (upload, ask, history, reset)
 │       ├── chat.py                # Chat UI, streaming answers and agent thoughts

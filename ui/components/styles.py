@@ -1,4 +1,4 @@
-"""Custom CSS for LexReviewerMCP UI: layout, chat, and PDF viewer."""
+"""Custom CSS for LexReviewer UI: layout, chat, and PDF viewer."""
 
 import streamlit as st
 

@@ -1,4 +1,4 @@
-"""File upload and document ID entry for the LexReviewerMCP document QA experience."""
+"""File upload and document ID entry for the LexReviewer document QA experience."""
 
 import base64
 import uuid

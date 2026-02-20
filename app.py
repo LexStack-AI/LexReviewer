@@ -1,4 +1,4 @@
-"""FastAPI backend for LexReviewerMCP document chat API.
+"""FastAPI backend for LexReviewer document chat API.
 
 Exposes endpoints for uploading documents, chatting over documents, and
 managing the underlying vector store and chat history.
