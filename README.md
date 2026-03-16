@@ -94,7 +94,7 @@ Create your `.env`: `cp .env.example .env` then edit. See `.env.example` for the
 <details>
 <summary><strong>Full environment variable list</strong></summary>
 
-- **Application & prompts:** `CHATBOT_NAME`, `AGENT_MODEL`, `REASNONING_AGENT_MODEL` (note typo), `AGENT_REASONING_ALLOWED`
+- **Application & prompts:** `CHATBOT_NAME`, `AGENT_MODEL`, `REASONING_AGENT_MODEL`, `AGENT_REASONING_ALLOWED`
 - **Linked documents:** `LINKED_DOCUMENT_FETCH_URL`
 - **Unstructured.io:** `UNSTRUCTURED_API_KEY`, plus `UNSTRUCTURED_*` options (max chars, overlap, strategy, etc.)
 - **OpenAI:** `OPENAI_API_KEY`, `OPENAI_CHAT_SUMMARY_MODEL`, `OPENAI_CHUNK_SUMMARY_MODEL`, `REQUIRED_TOOLS_GENERATOR_MODEL`, `OPENAI_EMBEDDING_MODEL_NAME`

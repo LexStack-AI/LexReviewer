@@ -42,7 +42,7 @@ class OpenAIProvider:
         """Return the main agent model, optionally enabling reasoning traces."""
         if reasoning:
             return ChatOpenAI(
-                model=os.getenv("REASNONING_AGENT_MODEL", "gpt-5.2"),
+                model=os.getenv("REASONING_AGENT_MODEL", "gpt-5.2"),
                 use_responses_api=True,
                 reasoning={"effort": "high", "summary": "auto"},
             )
